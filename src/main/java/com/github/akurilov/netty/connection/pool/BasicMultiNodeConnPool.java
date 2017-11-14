@@ -44,6 +44,16 @@ implements NonBlockingConnPool {
 	private final Object2IntMap<String> connCounts;
 	private final Object2IntMap<String> failedConnAttemptCounts;
 
+	/**
+	 *
+	 * @param concurrencyLevel the maximum concurrency level (the maximum count of the connections used simultaneously)
+	 * @param concurrencyThrottle the throttle for the concurrency level control
+	 * @param nodes the array of the endpoint nodes, any element may contain the port (followed after ":") to override the defaultPort argument
+	 * @param bootstrap Netty's bootstrap instance
+	 * @param connPoolHandler channel pool handler instance being notified upon new connection is created
+	 * @param defaultPort default port used to connect (any node address from the nodes set may override this)
+	 * @param connAttemptsLimit the max count of the subsequent connection failures to the node before the node will be excluded from the pool, 0 means no limit
+	 */
 	public BasicMultiNodeConnPool(
 		final int concurrencyLevel, final Semaphore concurrencyThrottle,  final String nodes[],
 		final Bootstrap bootstrap, final ChannelPoolHandler connPoolHandler, final int defaultPort,
