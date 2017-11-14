@@ -32,7 +32,7 @@ repositories {
 ext {
 	depVersion = [
 		commonsJava: "[1.2.0,)",
-		netty: "4.1.16.Final",
+		netty: "4.1.17.Final",
 	]
 }
 
@@ -52,10 +52,7 @@ dependencies {
 		"com.github.akurilov:java-commons:${depVersion.commonsJava}",
 
 		"io.netty:netty-common:${depVersion.netty}",
-		"io.netty:netty-buffer:${depVersion.netty}",
 		"io.netty:netty-transport:${depVersion.netty}",
-		"io.netty:netty-handler:${depVersion.netty}",
-		"io.netty:netty-codec-http:${depVersion.netty}",
 
 	)
 
@@ -165,18 +162,18 @@ uploadArchives {
 				project {
 					description = rootProject.description
 
-					url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos/wiki"
+					url "https://github.com/akurilov/netty-connection-pool/wiki"
 
 					scm {
-						connection "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
-						developerConnection "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
-						url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
+						connection "https://github.com/akurilov/netty-connection-pool.git"
+						developerConnection "https://github.com/akurilov/netty-connection-pool.git"
+						url "https://github.com/akurilov/netty-connection-pool.git"
 					}
 
 					licenses {
 						license {
-							name "The MIT License (MIT)"
-							url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos/wiki/License"
+							name "Apache 2.0 License"
+							url "https://github.com/akurilov/netty-connection-pool/wiki/License"
 						}
 					}
 
