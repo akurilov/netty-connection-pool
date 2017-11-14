@@ -1,0 +1,194 @@
+description = "High-performance non-blocking, multi-endpoint connection pool"
+
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+}
+
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "signing"
+
+group = "com.github.akurilov"
+version = "0.1.0"
+
+tasks.withType(JavaCompile) {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+task("create-dirs").doLast(
+	{
+		sourceSets*.java.srcDirs*.each { it.mkdirs() }
+		sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+	}
+)
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	depVersion = [
+		commonsJava: "[1.2.0,)",
+		netty: "4.1.16.Final",
+	]
+}
+
+configurations {
+	core
+	compileOnly {
+		extendsFrom core
+	}
+	testCompile {
+		extendsFrom core
+	}
+}
+
+dependencies {
+
+	compile(
+		"com.github.akurilov:java-commons:${depVersion.commonsJava}",
+
+		"io.netty:netty-common:${depVersion.netty}",
+		"io.netty:netty-buffer:${depVersion.netty}",
+		"io.netty:netty-transport:${depVersion.netty}",
+		"io.netty:netty-handler:${depVersion.netty}",
+		"io.netty:netty-codec-http:${depVersion.netty}",
+
+	)
+
+	testCompile(
+		"junit:junit:[4,)",
+	)
+}
+
+test {
+	/*
+	systemProperty "com.sun.management.jmxremote", "true"
+	systemProperty "com.sun.management.jmxremote.port", "9010"
+	systemProperty "com.sun.management.jmxremote.local.only", "false"
+	systemProperty "com.sun.management.jmxremote.authenticate", "false"
+	systemProperty "com.sun.management.jmxremote.ssl", "false"
+	*/
+	testLogging {
+		events "passed", "skipped", "failed", "standardOut"
+		showExceptions = true
+		showStandardStreams = true
+	}
+}
+
+def getCoreClassPath() {
+	return configurations.core.dependencies
+		.collect { dep -> ["..", (dep.name + ".jar")].join(File.separator) }
+		.join(" ")
+}
+
+static def getClassPath(final configuration) {
+	return configuration
+		.collect { file -> ["..", "lib", file.name].join(File.separator) }
+		.join(" ")
+}
+
+def fullClassPath = getCoreClassPath() + " " + getClassPath(configurations.runtime)
+
+jar {
+	archiveName "$project.name.$extension"
+	manifest {
+		attributes(
+			"Class-Path": fullClassPath,
+			"Implementation-Version": version,
+			"Implementation-Title": "$name"
+		)
+	}
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = "sources"
+	archiveName "$project.name-$classifier.$extension"
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = "javadoc"
+	archiveName "$project.name-$classifier.$extension"
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives jar
+	archives sourcesJar
+	archives javadocJar
+}
+
+def ossrhUsername = project.hasProperty("ossrhUsername") ?
+	project.property("ossrhUsername") : null
+def ossrhPassword = project.hasProperty("ossrhPassword") ?
+	project.property("ossrhPassword") : null
+
+signing {
+	required {
+		gradle.taskGraph.hasTask("uploadArchives")
+	}
+	sign configurations.archives
+}
+
+// see http://central.sonatype.org/pages/gradle.html for details
+uploadArchives {
+
+	// prevent the execution for empty (not leaf) subprojects and tests packages
+	if(project.name.contains("tests")) {
+		return
+	}
+
+	repositories {
+		mavenDeployer {
+			beforeDeployment {
+				MavenDeployment deployment -> signing.signPom(deployment)
+			}
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			pom {
+
+				groupId = rootProject.group
+				name = "mongoose-storage-driver-atmos"
+				artifactId = name
+
+				project {
+					description = rootProject.description
+
+					url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos/wiki"
+
+					scm {
+						connection "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
+						developerConnection "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
+						url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos.git"
+					}
+
+					licenses {
+						license {
+							name "The MIT License (MIT)"
+							url "https://github.com/emc-mongoose/mongoose-storage-driver-emc-atmos/wiki/License"
+						}
+					}
+
+					developers {
+						developer {
+							id "akurilov"
+							name "Andrey Kurilov"
+							email "akurilov123@gmail.com"
+						}
+					}
+				}
+			}
+		}
+	}
+}
