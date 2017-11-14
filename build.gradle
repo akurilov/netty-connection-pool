@@ -156,7 +156,7 @@ uploadArchives {
 			pom {
 
 				groupId = rootProject.group
-				name = "mongoose-storage-driver-atmos"
+				name = "netty-connection-pool"
 				artifactId = name
 
 				project {
