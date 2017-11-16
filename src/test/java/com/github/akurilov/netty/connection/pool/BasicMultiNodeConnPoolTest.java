@@ -4,7 +4,7 @@ import com.github.akurilov.commons.concurrent.ThreadUtil;
 import static com.github.akurilov.netty.connection.pool.NonBlockingConnPool.ATTR_KEY_NODE;
 
 import com.github.akurilov.netty.connection.pool.mock.BasicMultiNodeConnPoolMock;
-import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandlerMock;
+import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 
@@ -62,7 +62,7 @@ public class BasicMultiNodeConnPoolTest {
 		try(
 			final NonBlockingConnPool connPool = new BasicMultiNodeConnPoolMock(
 				concurrencyLevel, new Semaphore(concurrencyLevel), nodes, new Bootstrap(),
-				new DummyChannelPoolHandlerMock(), 9020, 0
+				new DummyChannelPoolHandler(), 9020, 0
 			)
 		) {
 			final ExecutorService poolLoader = Executors.newFixedThreadPool(

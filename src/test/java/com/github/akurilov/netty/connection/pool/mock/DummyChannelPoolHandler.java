@@ -6,7 +6,7 @@ import io.netty.channel.pool.ChannelPoolHandler;
 /**
  Created by andrey on 13.05.17.
  */
-public final class DummyChannelPoolHandlerMock
+public final class DummyChannelPoolHandler
 implements ChannelPoolHandler {
 
 	@Override
