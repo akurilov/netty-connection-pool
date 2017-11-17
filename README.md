@@ -15,7 +15,7 @@ operation (leasing/releasing many connections at once).
 ## Gradle
 
 ```groovy
-compile group: 'com.github.akurilov', name: 'netty-connection-pool', version: '0.1.0'
+compile group: 'com.github.akurilov', name: 'netty-connection-pool', version: '0.1.1'
 ```
 
 ## Code Example
@@ -32,12 +32,12 @@ final Bootstrap bootstrap = new Bootstrap();
 final ChannelPoolHandler cph = ...
 
 final NonBlockingConnPool connPool = new BasicMultiNodeConnPool(
-    concurrencyLevel, concurrencyThrottle, storageNodeAddrs, bootstrap, cph,
+    concurrencyThrottle, storageNodeAddrs, bootstrap, cph,
     storageNodePort, connAttemptsLimit
 );
 
 // optional
-connPool.preCreateConnections();
+connPool.preCreateConnections(concurrencyLevel);
 
 // use the pool
 final Channel conn = connPool.lease();
@@ -46,4 +46,25 @@ connPool.release(conn);
 
 // don't forget to clean up
 connPool.close();
+```
+
+## Batch Mode
+
+```java
+...
+
+// try to get up to 4096 connections per time
+final int maxConnCount = 0x1000;
+final List<Channel> conns = new ArrayList<>(maxConnCount);
+final int availConnCount = connPool.lease(conns, maxConnCount);
+
+// use the obtained connections
+Channel conn;
+for(int i = 0; i < availConnCount; i ++) {
+    conn = conns.get(i);
+    // use the connection
+}
+
+// release all connections back into the pool
+connPool.lease(conns);
 ```

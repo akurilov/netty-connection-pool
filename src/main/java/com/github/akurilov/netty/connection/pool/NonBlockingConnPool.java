@@ -18,9 +18,10 @@ extends Closeable {
 	/**
 	 Prepare the connections
 	 @throws ConnectException if failed to connect
+	 @throws IllegalArgumentException if count is less than 1
 	 */
-	void preCreateConnections()
-	throws ConnectException;
+	void preCreateConnections(final int count)
+	throws ConnectException, IllegalArgumentException;
 
 	/**
 	 Get the connection immediately (don't block) or null. The caller should decide whether to fail,
