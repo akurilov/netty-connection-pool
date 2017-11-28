@@ -3,8 +3,8 @@ package com.github.akurilov.netty.connection.pool;
 import com.github.akurilov.commons.concurrent.ThreadUtil;
 import static com.github.akurilov.netty.connection.pool.NonBlockingConnPool.ATTR_KEY_NODE;
 
-import com.github.akurilov.netty.connection.pool.mock.BasicMultiNodeConnPoolMock;
-import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.util.BasicMultiNodeConnPoolMock;
+import com.github.akurilov.netty.connection.pool.util.DummyChannelPoolHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 

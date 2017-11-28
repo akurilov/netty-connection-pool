@@ -1,8 +1,8 @@
 package com.github.akurilov.netty.connection.pool;
 
-import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
-import com.github.akurilov.netty.connection.pool.mock.DummyClientChannelHandler;
-import com.github.akurilov.netty.connection.pool.mock.NioConnDroppingServer;
+import com.github.akurilov.netty.connection.pool.util.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.util.DummyClientChannelHandler;
+import com.github.akurilov.netty.connection.pool.util.NioConnDroppingServer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
