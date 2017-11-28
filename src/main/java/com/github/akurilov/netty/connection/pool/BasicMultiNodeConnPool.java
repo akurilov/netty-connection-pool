@@ -192,16 +192,6 @@ implements NonBlockingConnPool {
 			LOG.fine("New connection to \"" + nodeAddr + "\"");
 			try {
 				conn = connect(nodeAddr);
-				conn.closeFuture().addListener(new CloseChannelListener(nodeAddr, conn));
-				conn.attr(ATTR_KEY_NODE).set(nodeAddr);
-				allConns.computeIfAbsent(nodeAddr, na -> new ArrayList<>()).add(conn);
-				synchronized(connCounts) {
-					connCounts.put(nodeAddr, connCounts.getInt(nodeAddr) + 1);
-				}
-				if(connAttemptsLimit > 0) {
-					// reset the connection failures counter if connected successfully
-					failedConnAttemptCounts.put(nodeAddr, 0);
-				}
 			} catch(final Exception e) {
 				LOG.warning(
 					"Failed to create a new connection to " + nodeAddr + ": " + e.toString()
@@ -242,12 +232,29 @@ implements NonBlockingConnPool {
 			}
 		}
 
+		if(conn != null) {
+			conn.closeFuture().addListener(new CloseChannelListener(nodeAddr, conn));
+			conn.attr(ATTR_KEY_NODE).set(nodeAddr);
+			allConns.computeIfAbsent(nodeAddr, na -> new ArrayList<>()).add(conn);
+			synchronized(connCounts) {
+				connCounts.put(nodeAddr, connCounts.getInt(nodeAddr) + 1);
+			}
+			if(connAttemptsLimit > 0) {
+				// reset the connection failures counter if connected successfully
+				failedConnAttemptCounts.put(nodeAddr, 0);
+			}
+		}
+
 		return conn;
 	}
 
 	protected Channel connect(final String addr)
 	throws Exception {
-		return bootstraps.get(addr).connect().sync().channel();
+		final Bootstrap bootstrap = bootstraps.get(addr);
+		if(bootstrap != null) {
+			return bootstrap.connect().sync().channel();
+		}
+		return null;
 	}
 
 	protected Channel poll() {
@@ -256,9 +263,11 @@ implements NonBlockingConnPool {
 		Channel conn;
 		for(int j = i; j < i + n; j ++) {
 			connQueue = availableConns.get(nodes[j % n]);
-			conn = connQueue.poll();
-			if(conn != null && conn.isActive()) {
-				return conn;
+			if(connQueue != null) {
+				conn = connQueue.poll();
+				if(conn != null && conn.isActive()) {
+					return conn;
+				}
 			}
 		}
 		return null;
@@ -352,6 +361,6 @@ implements NonBlockingConnPool {
 		}
 		connCounts.clear();
 		allConns.clear();
-		LOG.fine("Closed all " + closedConnCount + " connections");
+		LOG.fine("Closed " + closedConnCount + " connections");
 	}
 }

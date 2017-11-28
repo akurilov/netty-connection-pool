@@ -37,19 +37,22 @@ implements Closeable {
 				new ChannelInitializer<SocketChannel>() {
 					@Override
 					public final void initChannel(final SocketChannel ch) {
-						ch.pipeline().addLast(
-							new SimpleChannelInboundHandler<Object>() {
-								@Override
-								protected final void channelRead0(final ChannelHandlerContext ctx, final Object msg)
-								throws Exception {
-									if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
-										final Channel conn = ctx.channel();
-										System.out.println("Dropping the connection " + conn);
-										conn.close();
+						if(dropEveryRequest > 0) {
+							ch.pipeline().addLast(
+								new SimpleChannelInboundHandler<Object>() {
+									@Override
+									protected final void channelRead0(
+										final ChannelHandlerContext ctx, final Object msg
+									) throws Exception {
+										if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
+											final Channel conn = ctx.channel();
+											System.out.println("Dropping the connection " + conn);
+											conn.close();
+										}
 									}
 								}
-							}
-						);
+							);
+						}
 					}
 				}
 			);

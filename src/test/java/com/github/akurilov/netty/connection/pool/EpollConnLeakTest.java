@@ -35,9 +35,9 @@ public class EpollConnLeakTest {
 	private static final int CONCURRENCY = 10;
 	private static final String[] NODES = new String[] { "127.0.0.1" };
 	private static final ChannelPoolHandler CPH = new DummyChannelPoolHandler();
-	private static final int DEFAULT_PORT = 12_345;
-	private static final long TEST_TIME_SECONDS = 15;
-	private static final int FAIL_EVERY_CONN_ATTEMPT = 10;
+	private static final int DEFAULT_PORT = 9876;
+	private static final long TEST_TIME_SECONDS = 20;
+	private static final int FAIL_EVERY_CONN_ATTEMPT = 0;
 	private static final ByteBuf PAYLOAD = Unpooled.directBuffer(0x1000).writeZero(0x1000);
 
 	Closeable serverMock;
@@ -86,12 +86,14 @@ public class EpollConnLeakTest {
 								LockSupport.parkNanos(1);
 								continue;
 							}
-							conn.writeAndFlush(PAYLOAD.retain()).sync();
-							connPool.release(conn);
-						} catch(final InterruptedException e) {
-							break;
+							try {
+								conn.writeAndFlush(PAYLOAD.retain()).sync();
+							} finally {
+								connPool.release(conn);
+							}
 						} catch(final Throwable cause) {
 							cause.printStackTrace(System.err);
+							break;
 						}
 					}
 				}
@@ -100,15 +102,16 @@ public class EpollConnLeakTest {
 		TimeUnit.SECONDS.sleep(TEST_TIME_SECONDS);
 
 		// close
-		connPool.close();
 		executor.shutdownNow();
+		connPool.close();
+		group.shutdownGracefully();
+		serverMock.close();
+		TimeUnit.SECONDS.sleep(1);
 	}
 
 	@After
 	public void tearDown()
 	throws Exception {
-		group.shutdownGracefully();
-		serverMock.close();
 	}
 
 	@Test

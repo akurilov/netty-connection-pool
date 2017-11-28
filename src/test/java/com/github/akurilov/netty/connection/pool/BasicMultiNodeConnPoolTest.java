@@ -106,8 +106,8 @@ public class BasicMultiNodeConnPoolTest {
 				e.printStackTrace();
 			}
 			poolLoader.shutdownNow();
-		} catch(final IOException e) {
-			e.printStackTrace(System.err);
+		} catch(final Throwable t) {
+			t.printStackTrace(System.err);
 		} finally {
 			final long connCountSum = nodeFreq.values().stream().mapToLong(LongAdder::sum).sum();
 			System.out.println(
