@@ -32,11 +32,11 @@ import static org.junit.Assert.assertEquals;
 
 public class EpollConnLeakTest {
 
-	private static final int CONCURRENCY = 10;
+	private static final int CONCURRENCY = 100;
 	private static final String[] NODES = new String[] { "127.0.0.1" };
 	private static final ChannelPoolHandler CPH = new DummyChannelPoolHandler();
 	private static final int DEFAULT_PORT = 9876;
-	private static final long TEST_TIME_SECONDS = 20;
+	private static final long TEST_TIME_SECONDS = 30;
 	private static final int FAIL_EVERY_CONN_ATTEMPT = 0;
 	private static final ByteBuf PAYLOAD = Unpooled.directBuffer(0x1000).writeZero(0x1000);
 
