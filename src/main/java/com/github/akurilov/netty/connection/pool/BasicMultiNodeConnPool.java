@@ -145,6 +145,7 @@ implements NonBlockingConnPool {
 		@Override
 		public final void operationComplete(final ChannelFuture future)
 		throws Exception {
+			LOG.fine("Connection to " + nodeAddr + " closed");
 			closeLock.lock();
 			try {
 				synchronized(connCounts) {
@@ -243,6 +244,7 @@ implements NonBlockingConnPool {
 				// reset the connection failures counter if connected successfully
 				failedConnAttemptCounts.put(nodeAddr, 0);
 			}
+			LOG.fine("New connection to " + nodeAddr + " created");
 		}
 
 		return conn;
@@ -350,17 +352,27 @@ implements NonBlockingConnPool {
 	public void close()
 	throws IOException {
 		closeLock.lock();
-		availableConns.clear();
-		bootstraps.clear();
 		int closedConnCount = 0;
-		for(final String nodeAddr : allConns.keySet()) {
-			for(final Channel conn : allConns.get(nodeAddr)) {
-				conn.close();
-				closedConnCount ++;
+		for(final String nodeAddr: availableConns.keySet()) {
+			for(final Channel conn: availableConns.get(nodeAddr)) {
+				if(conn.isOpen()) {
+					conn.close();
+					closedConnCount ++;
+				}
 			}
 		}
-		connCounts.clear();
+		availableConns.clear();
+		for(final String nodeAddr: allConns.keySet()) {
+			for(final Channel conn: allConns.get(nodeAddr)) {
+				if(conn.isOpen()) {
+					conn.close();
+					closedConnCount ++;
+				}
+			}
+		}
 		allConns.clear();
+		bootstraps.clear();
+		connCounts.clear();
 		LOG.fine("Closed " + closedConnCount + " connections");
 	}
 }

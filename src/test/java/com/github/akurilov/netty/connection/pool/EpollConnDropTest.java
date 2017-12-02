@@ -97,10 +97,8 @@ public class EpollConnDropTest {
 					Channel conn;
 					for(int j = 0; j < CONN_ATTEMPTS; j ++) {
 						try {
-							conn = connPool.lease();
-							if(conn == null) {
-								LockSupport.parkNanos(1);
-								continue;
+							while(null == (conn = connPool.lease())) {
+								Thread.sleep(1);
 							}
 							conn.writeAndFlush(PAYLOAD.retain()).sync();
 							connPool.release(conn);

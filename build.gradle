@@ -11,7 +11,7 @@ apply plugin: "maven"
 apply plugin: "signing"
 
 group = "com.github.akurilov"
-version = "0.1.2"
+version = "0.1.3"
 
 tasks.withType(JavaCompile) {
 	sourceCompatibility = JavaVersion.VERSION_1_8
