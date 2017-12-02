@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.mock;
+package com.github.akurilov.netty.connection.pool.util;
 
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPoolHandler;

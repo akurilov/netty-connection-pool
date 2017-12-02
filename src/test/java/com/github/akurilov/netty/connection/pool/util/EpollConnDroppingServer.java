@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.mock;
+package com.github.akurilov.netty.connection.pool.util;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -7,15 +7,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class NioConnDroppingServer
+/**
+ * Created by andrey on 17.11.17.
+ */
+public class EpollConnDroppingServer
 implements Closeable {
 
 	private final EventLoopGroup dispatchGroup;
@@ -23,31 +26,33 @@ implements Closeable {
 	private final ChannelFuture bindFuture;
 	private final AtomicLong reqCounter = new AtomicLong(0);
 
-	public NioConnDroppingServer(final int port, final int dropEveryRequest)
+	public EpollConnDroppingServer(final int port, final int dropEveryRequest)
 	throws InterruptedException {
-		dispatchGroup = new NioEventLoopGroup();
-		workerGroup = new NioEventLoopGroup();
+		dispatchGroup = new EpollEventLoopGroup();
+		workerGroup = new EpollEventLoopGroup();
 		final ServerBootstrap bootstrap = new ServerBootstrap()
 			.group(dispatchGroup, workerGroup)
-			.channel(NioServerSocketChannel.class)
+			.channel(EpollServerSocketChannel.class)
 			.childHandler(
 				new ChannelInitializer<SocketChannel>() {
 					@Override
 					public final void initChannel(final SocketChannel ch) {
-						ch.pipeline().addLast(
-							new SimpleChannelInboundHandler<Object>() {
-								@Override
-								protected final void channelRead0(
-									final ChannelHandlerContext ctx, final Object msg
-								) throws Exception {
-									if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
-										final Channel conn = ctx.channel();
-										System.out.println("Dropping the connection " + conn);
-										conn.close();
+						if(dropEveryRequest > 0) {
+							ch.pipeline().addLast(
+								new SimpleChannelInboundHandler<Object>() {
+									@Override
+									protected final void channelRead0(
+										final ChannelHandlerContext ctx, final Object msg
+									) throws Exception {
+										if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
+											final Channel conn = ctx.channel();
+											System.out.println("Dropping the connection " + conn);
+											conn.close();
+										}
 									}
 								}
-							}
-						);
+							);
+						}
 					}
 				}
 			);
@@ -63,4 +68,3 @@ implements Closeable {
 		dispatchGroup.shutdownGracefully();
 	}
 }
-

@@ -1,8 +1,8 @@
 package com.github.akurilov.netty.connection.pool;
 
-import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
-import com.github.akurilov.netty.connection.pool.mock.DummyClientChannelHandler;
-import com.github.akurilov.netty.connection.pool.mock.NioConnDroppingServer;
+import com.github.akurilov.netty.connection.pool.util.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.util.DummyClientChannelHandler;
+import com.github.akurilov.netty.connection.pool.util.NioConnDroppingServer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -29,6 +29,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.IntStream;
 
 /**
  * Created by andrey on 16.11.17.
@@ -96,10 +97,8 @@ public class NioConnDropTest {
 					Channel conn;
 					for(int j = 0; j < CONN_ATTEMPTS; j ++) {
 						try {
-							conn = connPool.lease();
-							if(conn == null) {
-								LockSupport.parkNanos(1);
-								continue;
+							while(null == (conn = connPool.lease())) {
+								Thread.sleep(1);
 							}
 							conn.writeAndFlush(PAYLOAD.retain()).sync();
 							connPool.release(conn);

@@ -145,6 +145,7 @@ implements NonBlockingConnPool {
 		@Override
 		public final void operationComplete(final ChannelFuture future)
 		throws Exception {
+			LOG.fine("Connection to " + nodeAddr + " closed");
 			closeLock.lock();
 			try {
 				synchronized(connCounts) {
@@ -192,16 +193,6 @@ implements NonBlockingConnPool {
 			LOG.fine("New connection to \"" + nodeAddr + "\"");
 			try {
 				conn = connect(nodeAddr);
-				conn.closeFuture().addListener(new CloseChannelListener(nodeAddr, conn));
-				conn.attr(ATTR_KEY_NODE).set(nodeAddr);
-				allConns.computeIfAbsent(nodeAddr, na -> new ArrayList<>()).add(conn);
-				synchronized(connCounts) {
-					connCounts.put(nodeAddr, connCounts.getInt(nodeAddr) + 1);
-				}
-				if(connAttemptsLimit > 0) {
-					// reset the connection failures counter if connected successfully
-					failedConnAttemptCounts.put(nodeAddr, 0);
-				}
 			} catch(final Exception e) {
 				LOG.warning(
 					"Failed to create a new connection to " + nodeAddr + ": " + e.toString()
@@ -242,12 +233,30 @@ implements NonBlockingConnPool {
 			}
 		}
 
+		if(conn != null) {
+			conn.closeFuture().addListener(new CloseChannelListener(nodeAddr, conn));
+			conn.attr(ATTR_KEY_NODE).set(nodeAddr);
+			allConns.computeIfAbsent(nodeAddr, na -> new ArrayList<>()).add(conn);
+			synchronized(connCounts) {
+				connCounts.put(nodeAddr, connCounts.getInt(nodeAddr) + 1);
+			}
+			if(connAttemptsLimit > 0) {
+				// reset the connection failures counter if connected successfully
+				failedConnAttemptCounts.put(nodeAddr, 0);
+			}
+			LOG.fine("New connection to " + nodeAddr + " created");
+		}
+
 		return conn;
 	}
 
 	protected Channel connect(final String addr)
 	throws Exception {
-		return bootstraps.get(addr).connect().sync().channel();
+		final Bootstrap bootstrap = bootstraps.get(addr);
+		if(bootstrap != null) {
+			return bootstrap.connect().sync().channel();
+		}
+		return null;
 	}
 
 	protected Channel poll() {
@@ -256,9 +265,11 @@ implements NonBlockingConnPool {
 		Channel conn;
 		for(int j = i; j < i + n; j ++) {
 			connQueue = availableConns.get(nodes[j % n]);
-			conn = connQueue.poll();
-			if(conn != null && conn.isActive()) {
-				return conn;
+			if(connQueue != null) {
+				conn = connQueue.poll();
+				if(conn != null && conn.isActive()) {
+					return conn;
+				}
 			}
 		}
 		return null;
@@ -341,17 +352,27 @@ implements NonBlockingConnPool {
 	public void close()
 	throws IOException {
 		closeLock.lock();
-		availableConns.clear();
-		bootstraps.clear();
 		int closedConnCount = 0;
-		for(final String nodeAddr : allConns.keySet()) {
-			for(final Channel conn : allConns.get(nodeAddr)) {
-				conn.close();
-				closedConnCount ++;
+		for(final String nodeAddr: availableConns.keySet()) {
+			for(final Channel conn: availableConns.get(nodeAddr)) {
+				if(conn.isOpen()) {
+					conn.close();
+					closedConnCount ++;
+				}
 			}
 		}
-		connCounts.clear();
+		availableConns.clear();
+		for(final String nodeAddr: allConns.keySet()) {
+			for(final Channel conn: allConns.get(nodeAddr)) {
+				if(conn.isOpen()) {
+					conn.close();
+					closedConnCount ++;
+				}
+			}
+		}
 		allConns.clear();
-		LOG.fine("Closed all " + closedConnCount + " connections");
+		bootstraps.clear();
+		connCounts.clear();
+		LOG.fine("Closed " + closedConnCount + " connections");
 	}
 }

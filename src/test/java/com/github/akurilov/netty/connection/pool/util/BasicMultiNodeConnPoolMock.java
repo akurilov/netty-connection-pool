@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.mock;
+package com.github.akurilov.netty.connection.pool.util;
 
 import com.github.akurilov.netty.connection.pool.BasicMultiNodeConnPool;
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
