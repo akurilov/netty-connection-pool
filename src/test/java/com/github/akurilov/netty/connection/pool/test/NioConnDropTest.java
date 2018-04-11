@@ -1,9 +1,10 @@
-package com.github.akurilov.netty.connection.pool;
+package com.github.akurilov.netty.connection.pool.test;
 
-import com.github.akurilov.netty.connection.pool.util.DummyChannelPoolHandler;
-import com.github.akurilov.netty.connection.pool.util.DummyClientChannelHandler;
-import com.github.akurilov.netty.connection.pool.util.NioConnDroppingServer;
-
+import com.github.akurilov.netty.connection.pool.BasicMultiNodeConnPool;
+import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
+import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.test.util.DummyClientChannelHandler;
+import com.github.akurilov.netty.connection.pool.test.util.NioConnDroppingServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -28,8 +29,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.LockSupport;
-import java.util.stream.IntStream;
 
 /**
  * Created by andrey on 16.11.17.
@@ -55,9 +54,9 @@ public class NioConnDropTest {
 
 		serverMock = new NioConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
 
-		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
+		final var concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new NioEventLoopGroup();
-		final Bootstrap bootstrap = new Bootstrap()
+		final var bootstrap = new Bootstrap()
 			.group(group)
 			.channel(NioSocketChannel.class)
 			.handler(
@@ -89,13 +88,13 @@ public class NioConnDropTest {
 	@Test
 	public void test()
 	throws Exception {
-		final LongAdder connCounter = new LongAdder();
-		final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY);
-		for(int i = 0; i < CONCURRENCY; i ++) {
+		final var connCounter = new LongAdder();
+		final var executor = Executors.newFixedThreadPool(CONCURRENCY);
+		for(var i = 0; i < CONCURRENCY; i ++) {
 			executor.submit(
 				() -> {
 					Channel conn;
-					for(int j = 0; j < CONN_ATTEMPTS; j ++) {
+					for(var j = 0; j < CONN_ATTEMPTS; j ++) {
 						try {
 							while(null == (conn = connPool.lease())) {
 								Thread.sleep(1);

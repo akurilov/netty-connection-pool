@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.util;
+package com.github.akurilov.netty.connection.pool.test.util;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -14,16 +14,16 @@ public interface PortTools {
 	
 	static Scanner getNetstatOutput()
 	throws IOException {
-		final String[] netstatCommand = { "netstat", "-an" };
-		final Process netstatProcess = Runtime.getRuntime().exec(netstatCommand);
+		final var netstatCommand = new String[]{ "netstat", "-an" };
+		final var netstatProcess = Runtime.getRuntime().exec(netstatCommand);
 		return new Scanner(netstatProcess.getInputStream(), "IBM850").useDelimiter("\\n");
 	}
 	
 	static int getConnectionCount(final String nodeAddrWithPort)
 	throws IOException {
-		int countConnections = 0;
-		final Pattern patternConn = Pattern.compile(nodeAddrWithPort + FMT_PATTERN_CONN);
-		try(final Scanner netstatOutputScanner = getNetstatOutput()) {
+		var countConnections = 0;
+		final var patternConn = Pattern.compile(nodeAddrWithPort + FMT_PATTERN_CONN);
+		try(final var netstatOutputScanner = getNetstatOutput()) {
 			String line;
 			Matcher m;
 			while(netstatOutputScanner.hasNext()) {

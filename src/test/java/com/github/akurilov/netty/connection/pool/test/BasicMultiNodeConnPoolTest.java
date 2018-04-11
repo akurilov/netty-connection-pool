@@ -1,14 +1,15 @@
-package com.github.akurilov.netty.connection.pool;
+package com.github.akurilov.netty.connection.pool.test;
 
-import com.github.akurilov.commons.concurrent.ThreadUtil;
+import com.github.akurilov.concurrent.ThreadUtil;
+
 import static com.github.akurilov.netty.connection.pool.NonBlockingConnPool.ATTR_KEY_NODE;
 
-import com.github.akurilov.netty.connection.pool.util.BasicMultiNodeConnPoolMock;
-import com.github.akurilov.netty.connection.pool.util.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
+import com.github.akurilov.netty.connection.pool.test.util.BasicMultiNodeConnPoolMock;
+import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,24 +56,24 @@ public class BasicMultiNodeConnPoolTest {
 	public BasicMultiNodeConnPoolTest(final int concurrencyLevel, final int nodeCount) {
 		this.concurrencyLevel = concurrencyLevel;
 		this.nodeCount = nodeCount;
-		final String[] nodes = new String[nodeCount];
-		for(int i = 0; i < nodeCount; i ++) {
+		final var nodes = new String[nodeCount];
+		for(var i = 0; i < nodeCount; i ++) {
 			nodes[i] = Integer.toString(i);
 		}
 		try(
-			final NonBlockingConnPool connPool = new BasicMultiNodeConnPoolMock(
+			final var connPool = new BasicMultiNodeConnPoolMock(
 				new Semaphore(concurrencyLevel), nodes, new Bootstrap(),
 				new DummyChannelPoolHandler(), 12345, 0
 			)
 		) {
-			final ExecutorService poolLoader = Executors.newFixedThreadPool(
+			final var poolLoader = Executors.newFixedThreadPool(
 				ThreadUtil.getHardwareThreadCount()
 			);
-			for(int i = 0; i < ThreadUtil.getHardwareThreadCount(); i ++) {
+			for(var i = 0; i < ThreadUtil.getHardwareThreadCount(); i ++) {
 				poolLoader.submit(
 					() -> {
-						final Thread currThread = Thread.currentThread();
-						final List<Channel> connBuff = new ArrayList<>(BATCH_SIZE);
+						final var currThread = Thread.currentThread();
+						final var connBuff = new ArrayList<Channel>(BATCH_SIZE);
 						int j, k;
 						Channel c;
 						try {
@@ -109,7 +110,7 @@ public class BasicMultiNodeConnPoolTest {
 		} catch(final Throwable t) {
 			t.printStackTrace(System.err);
 		} finally {
-			final long connCountSum = nodeFreq.values().stream().mapToLong(LongAdder::sum).sum();
+			final var connCountSum = nodeFreq.values().stream().mapToLong(LongAdder::sum).sum();
 			System.out.println(
 				"concurrency = " + concurrencyLevel + ", nodes = " + nodeCount + " -> rate: " +
 					connCountSum / TEST_STEP_TIME_SECONDS
@@ -120,9 +121,9 @@ public class BasicMultiNodeConnPoolTest {
 	@Test
 	public void test() {
 		if(nodeCount > 1) {
-			final long connCountSum = nodeFreq.values().stream().mapToLong(LongAdder::sum).sum();
-			final long avgConnCountPerNode = connCountSum / nodeCount;
-			for(final String nodeAddr: nodeFreq.keySet()) {
+			final var connCountSum = nodeFreq.values().stream().mapToLong(LongAdder::sum).sum();
+			final var avgConnCountPerNode = connCountSum / nodeCount;
+			for(final var nodeAddr: nodeFreq.keySet()) {
 				assertTrue(nodeFreq.get(nodeAddr).sum() > 0);
 				assertEquals(
 					"Node count: " + nodeCount + ", node: \"" + nodeAddr

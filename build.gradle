@@ -11,65 +11,98 @@ apply plugin: "maven"
 apply plugin: "signing"
 
 group = "com.github.akurilov"
-version = "0.1.6"
+version = "1.0.0"
 
-tasks.withType(JavaCompile) {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
+ext {
+	moduleName = "${group}.netty.connection.pool"
+	depVersion = [
+		javaCommons: "[2.0.0,)",
+		javaConcurrent: "[2.0.0,)",
+		netty: "4.1.23.Final",
+	]
 }
-
-task("create-dirs").doLast(
-	{
-		sourceSets*.java.srcDirs*.each { it.mkdirs() }
-		sourceSets*.resources.srcDirs*.each { it.mkdirs() }
-	}
-)
 
 repositories {
 	mavenCentral()
 }
 
-ext {
-	depVersion = [
-		commonsJava: "[1.4.1,)",
-		mongoose: "[3.6,)",
-		netty: "4.1.17.Final",
-	]
-}
-
-configurations {
-	core
-	compileOnly {
-		extendsFrom core
-	}
-	testCompile {
-		extendsFrom core
-	}
-}
-
 dependencies {
 
 	compile(
-		"com.github.akurilov:java-commons:${depVersion.commonsJava}",
+		"com.github.akurilov:java-commons:${depVersion.javaCommons}",
+		"com.github.akurilov:java-concurrent:${depVersion.javaConcurrent}",
 		"io.netty:netty-common:${depVersion.netty}",
 		"io.netty:netty-transport:${depVersion.netty}",
 	)
 
 	testCompile(
 		"junit:junit:[4,)",
-		"com.github.emc-mongoose:mongoose-api-model:${depVersion.mongoose}",
 		"io.netty:netty-transport-native-epoll:${depVersion.netty}:linux-x86_64",
 	)
 }
 
+compileJava {
+	sourceCompatibility = JavaVersion.VERSION_1_10
+	targetCompatibility = JavaVersion.VERSION_1_10
+	inputs.property("moduleName", moduleName)
+	doFirst {
+		options.compilerArgs = [
+			"--module-path", classpath.asPath,
+		]
+		classpath = files()
+	}
+}
+
+compileTestJava {
+	sourceCompatibility = JavaVersion.VERSION_1_10
+	targetCompatibility = JavaVersion.VERSION_1_10
+	inputs.property("moduleName", moduleName)
+	doFirst {
+		options.compilerArgs = [
+			"--module-path", classpath.asPath,
+			"--add-modules", "ALL-MODULE-PATH",
+			"--add-reads", "${moduleName}.test=junit",
+			"--patch-module", "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
+		]
+		classpath = files()
+	}
+}
+
+jar {
+	inputs.property("moduleName", moduleName)
+	archiveName "$project.name.$extension"
+	manifest {
+		attributes(
+			"Automatic-Module-Name": moduleName,
+			"Implementation-Version": version,
+			"Implementation-Title": "$name"
+		)
+	}
+}
+
 test {
+	inputs.property("moduleName", moduleName)
+	doFirst {
+		jvmArgs += [
+			"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+			"-XX:+HeapDumpOnOutOfMemoryError",
+			"--module-path", classpath.asPath,
+			'--add-exports', "$moduleName/${moduleName}.test=junit",
+			"--add-modules", "ALL-MODULE-PATH",
+			"--add-reads", "${moduleName}.test=junit",
+			"--patch-module", "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
+		]
+		classpath = files()
+	}
+	maxHeapSize "1g"
 	/*
 	systemProperty "com.sun.management.jmxremote", "true"
 	systemProperty "com.sun.management.jmxremote.port", "9010"
+	systemProperty "com.sun.management.jmxremote.rmi.port", "9010"
 	systemProperty "com.sun.management.jmxremote.local.only", "false"
 	systemProperty "com.sun.management.jmxremote.authenticate", "false"
 	systemProperty "com.sun.management.jmxremote.ssl", "false"
-	*/
+	 */
 	testLogging {
 		events "passed", "skipped", "failed", "standardOut"
 		showExceptions = true
@@ -77,35 +110,14 @@ test {
 	}
 }
 
-def getCoreClassPath() {
-	return configurations.core.dependencies
-		.collect { dep -> ["..", (dep.name + ".jar")].join(File.separator) }
-		.join(" ")
-}
-
-static def getClassPath(final configuration) {
-	return configuration
-		.collect { file -> ["..", "lib", file.name].join(File.separator) }
-		.join(" ")
-}
-
-def fullClassPath = getCoreClassPath() + " " + getClassPath(configurations.runtime)
-
-jar {
-	archiveName "$project.name.$extension"
-	manifest {
-		attributes(
-			"Class-Path": fullClassPath,
-			"Implementation-Version": version,
-			"Implementation-Title": "$name"
-		)
-	}
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
 	classifier = "sources"
 	archiveName "$project.name-$classifier.$extension"
 	from sourceSets.main.allSource
+}
+
+javadoc {
+	options.addStringOption("-module-path", classpath.asPath)
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -189,4 +201,8 @@ uploadArchives {
 			}
 		}
 	}
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = "4.6"
 }

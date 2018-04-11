@@ -72,7 +72,7 @@ implements NonBlockingConnPool {
 		connCounts = new Object2IntOpenHashMap<>(n);
 		failedConnAttemptCounts = new Object2IntOpenHashMap<>(n);
 
-		for(final String node : nodes) {
+		for(final var node : nodes) {
 			final InetSocketAddress nodeAddr;
 			if(node.contains(":")) {
 				final String addrParts[] = node.split(":");
@@ -86,11 +86,11 @@ implements NonBlockingConnPool {
 					.clone()
 					.remoteAddress(nodeAddr)
 					.handler(
-						new ChannelInitializer<Channel>() {
+						new ChannelInitializer<>() {
 							@Override
 							protected final void initChannel(final Channel conn)
 							throws Exception {
-								if(!conn.eventLoop().inEventLoop()) {
+								if(! conn.eventLoop().inEventLoop()) {
 									throw new AssertionError();
 								}
 								connPoolHandler.channelCreated(conn);
@@ -108,16 +108,16 @@ implements NonBlockingConnPool {
 	public void preCreateConnections(final int count)
 	throws ConnectException, IllegalArgumentException {
 		if(count > 0) {
-			for(int i = 0; i < count; i ++) {
-				final Channel conn = connectToAnyNode();
+			for(var i = 0; i < count; i ++) {
+				final var conn = connectToAnyNode();
 				if(conn == null) {
 					throw new ConnectException(
 						"Failed to pre-create the connections to the target nodes"
 					);
 				}
-				final String nodeAddr = conn.attr(ATTR_KEY_NODE).get();
+				final var nodeAddr = conn.attr(ATTR_KEY_NODE).get();
 				if(conn.isActive()) {
-					final Queue<Channel> connQueue = availableConns.get(nodeAddr);
+					final var connQueue = availableConns.get(nodeAddr);
 					if(connQueue != null) {
 						connQueue.add(conn);
 					}
@@ -154,7 +154,7 @@ implements NonBlockingConnPool {
 					}
 				}
 				synchronized(allConns) {
-					final List<Channel> nodeConns = allConns.get(nodeAddr);
+					final var nodeConns = allConns.get(nodeAddr);
 					if(nodeConns != null) {
 						nodeConns.remove(conn);
 					}
@@ -174,9 +174,10 @@ implements NonBlockingConnPool {
 		// select the endpoint node having the minimum count of established connections
 		String nodeAddr = null;
 		String nextNodeAddr;
-		int minConnsCount = Integer.MAX_VALUE, nextConnsCount = 0;
-		final int i = ThreadLocalRandom.current().nextInt(n);
-		for(int j = i; j < n; j ++) {
+		var minConnsCount = Integer.MAX_VALUE;
+		int nextConnsCount = 0;
+		final var i = ThreadLocalRandom.current().nextInt(n);
+		for(var j = i; j < n; j ++) {
 			nextNodeAddr = nodes[j % n];
 			nextConnsCount = connCounts.getInt(nextNodeAddr);
 			if(nextConnsCount == 0) {
@@ -198,7 +199,7 @@ implements NonBlockingConnPool {
 					"Failed to create a new connection to " + nodeAddr + ": " + e.toString()
 				);
 				if(connAttemptsLimit > 0) {
-					final int selectedNodeFailedConnAttemptsCount = failedConnAttemptCounts
+					final var selectedNodeFailedConnAttemptsCount = failedConnAttemptCounts
 						.getInt(nodeAddr) + 1;
 					failedConnAttemptCounts.put(
 						nodeAddr, selectedNodeFailedConnAttemptsCount
@@ -212,8 +213,8 @@ implements NonBlockingConnPool {
 						// the node having virtually Integer.MAX_VALUE established connections
 						// will never be selected by the algorithm
 						connCounts.put(nodeAddr, Integer.MAX_VALUE);
-						boolean allNodesExcluded = true;
-						for(final String node : nodes) {
+						var allNodesExcluded = true;
+						for(final var node : nodes) {
 							if(connCounts.getInt(node) < Integer.MAX_VALUE) {
 								allNodesExcluded = false;
 								break;
@@ -252,7 +253,7 @@ implements NonBlockingConnPool {
 
 	protected Channel connect(final String addr)
 	throws Exception {
-		final Bootstrap bootstrap = bootstraps.get(addr);
+		final var bootstrap = bootstraps.get(addr);
 		if(bootstrap != null) {
 			return bootstrap.connect().sync().channel();
 		}
@@ -260,10 +261,10 @@ implements NonBlockingConnPool {
 	}
 
 	protected Channel poll() {
-		final int i = ThreadLocalRandom.current().nextInt(n);
+		final var i = ThreadLocalRandom.current().nextInt(n);
 		Queue<Channel> connQueue;
 		Channel conn;
-		for(int j = i; j < i + n; j ++) {
+		for(var j = i; j < i + n; j ++) {
 			connQueue = availableConns.get(nodes[j % n]);
 			if(connQueue != null) {
 				conn = connQueue.poll();
@@ -294,7 +295,7 @@ implements NonBlockingConnPool {
 	@Override
 	public final int lease(final List<Channel> conns, final int maxCount)
 	throws ConnectException {
-		int availableCount = concurrencyThrottle.drainPermits();
+		var availableCount = concurrencyThrottle.drainPermits();
 		if(availableCount == 0) {
 			return availableCount;
 		}
@@ -304,7 +305,7 @@ implements NonBlockingConnPool {
 		}
 		
 		Channel conn;
-		for(int i = 0; i < availableCount; i ++) {
+		for(var i = 0; i < availableCount; i ++) {
 			if(null == (conn = poll())) {
 				conn = connectToAnyNode();
 			}
@@ -320,9 +321,9 @@ implements NonBlockingConnPool {
 
 	@Override
 	public final void release(final Channel conn) {
-		final String nodeAddr = conn.attr(ATTR_KEY_NODE).get();
+		final var nodeAddr = conn.attr(ATTR_KEY_NODE).get();
 		if(conn.isActive()) {
-			final Queue<Channel> connQueue = availableConns.get(nodeAddr);
+			final var connQueue = availableConns.get(nodeAddr);
 			if(connQueue != null) {
 				connQueue.add(conn);
 			}
@@ -336,7 +337,7 @@ implements NonBlockingConnPool {
 	public final void release(final List<Channel> conns) {
 		String nodeAddr;
 		Queue<Channel> connQueue;
-		for(final Channel conn : conns) {
+		for(final var conn : conns) {
 			nodeAddr = conn.attr(ATTR_KEY_NODE).get();
 			if(conn.isActive()) {
 				connQueue = availableConns.get(nodeAddr);
@@ -353,8 +354,8 @@ implements NonBlockingConnPool {
 	throws IOException {
 		closeLock.lock();
 		int closedConnCount = 0;
-		for(final String nodeAddr: availableConns.keySet()) {
-			for(final Channel conn: availableConns.get(nodeAddr)) {
+		for(final var nodeAddr: availableConns.keySet()) {
+			for(final var conn: availableConns.get(nodeAddr)) {
 				if(conn.isOpen()) {
 					conn.close();
 					closedConnCount ++;
@@ -362,8 +363,8 @@ implements NonBlockingConnPool {
 			}
 		}
 		availableConns.clear();
-		for(final String nodeAddr: allConns.keySet()) {
-			for(final Channel conn: allConns.get(nodeAddr)) {
+		for(final var nodeAddr: allConns.keySet()) {
+			for(final var conn: allConns.get(nodeAddr)) {
 				if(conn.isOpen()) {
 					conn.close();
 					closedConnCount ++;

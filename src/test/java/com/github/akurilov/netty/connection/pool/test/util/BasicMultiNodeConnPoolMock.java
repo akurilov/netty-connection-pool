@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.util;
+package com.github.akurilov.netty.connection.pool.test.util;
 
 import com.github.akurilov.netty.connection.pool.BasicMultiNodeConnPool;
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
@@ -28,7 +28,7 @@ implements NonBlockingConnPool {
 	}
 
 	protected final Channel connect(final String addr) {
-		final Channel c = new EmbeddedChannel();
+		final var c = new EmbeddedChannel();
 		c.attr(ATTR_KEY_NODE).set(addr);
 		return c;
 	}
