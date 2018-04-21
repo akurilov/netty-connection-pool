@@ -6,6 +6,7 @@ import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandl
 import com.github.akurilov.netty.connection.pool.test.util.DummyClientChannelHandler;
 import com.github.akurilov.netty.connection.pool.test.util.EpollConnDroppingServer;
 import com.github.akurilov.netty.connection.pool.test.util.PortTools;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -52,9 +53,9 @@ public class EpollConnLeakTest {
 		serverMock = new EpollConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
 
 		// create
-		final var concurrencyThrottle = new Semaphore(CONCURRENCY);
+		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new EpollEventLoopGroup();
-		final var bootstrap = new Bootstrap()
+		final Bootstrap bootstrap = new Bootstrap()
 			.group(group)
 			.channel(EpollSocketChannel.class)
 			.handler(
@@ -75,10 +76,10 @@ public class EpollConnLeakTest {
 		connPool.preCreateConnections(CONCURRENCY);
 
 		// use
-		final var executor = Executors.newFixedThreadPool(CONCURRENCY);
-		for(var i = 0; i < CONCURRENCY; i ++) {
+		final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY);
+		for(int i = 0; i < CONCURRENCY; i ++) {
 			executor.submit(
-				() -> {
+				(Runnable) () -> {
 					Channel conn;
 					while(true) {
 						try {
@@ -118,7 +119,7 @@ public class EpollConnLeakTest {
 	@Test
 	public void testNoConnectionsAreAfterPoolClosed()
 	throws Exception {
-		final var actualConnCount = PortTools.getConnectionCount("127.0.0.1:" + DEFAULT_PORT);
+		final int actualConnCount = PortTools.getConnectionCount("127.0.0.1:" + DEFAULT_PORT);
 		assertEquals(
 			"Connection count should be equal to 0 after pool has been closed, but got "
 				+ actualConnCount, 0, actualConnCount

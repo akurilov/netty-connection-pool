@@ -14,16 +14,16 @@ public interface PortTools {
 	
 	static Scanner getNetstatOutput()
 	throws IOException {
-		final var netstatCommand = new String[]{ "netstat", "-an" };
-		final var netstatProcess = Runtime.getRuntime().exec(netstatCommand);
+		final String[] netstatCommand = { "netstat", "-an" };
+		final Process netstatProcess = Runtime.getRuntime().exec(netstatCommand);
 		return new Scanner(netstatProcess.getInputStream(), "IBM850").useDelimiter("\\n");
 	}
 	
 	static int getConnectionCount(final String nodeAddrWithPort)
 	throws IOException {
-		var countConnections = 0;
-		final var patternConn = Pattern.compile(nodeAddrWithPort + FMT_PATTERN_CONN);
-		try(final var netstatOutputScanner = getNetstatOutput()) {
+		int countConnections = 0;
+		final Pattern patternConn = Pattern.compile(nodeAddrWithPort + FMT_PATTERN_CONN);
+		try(final Scanner netstatOutputScanner = getNetstatOutput()) {
 			String line;
 			Matcher m;
 			while(netstatOutputScanner.hasNext()) {

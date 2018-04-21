@@ -27,7 +27,7 @@ implements Closeable {
 	throws InterruptedException {
 		dispatchGroup = new NioEventLoopGroup();
 		workerGroup = new NioEventLoopGroup();
-		final var bootstrap = new ServerBootstrap()
+		final ServerBootstrap bootstrap = new ServerBootstrap()
 			.group(dispatchGroup, workerGroup)
 			.channel(NioServerSocketChannel.class)
 			.childHandler(
@@ -35,13 +35,13 @@ implements Closeable {
 					@Override
 					public final void initChannel(final SocketChannel ch) {
 						ch.pipeline().addLast(
-							new SimpleChannelInboundHandler<>() {
+							new SimpleChannelInboundHandler<Object>() {
 								@Override
 								protected final void channelRead0(
 									final ChannelHandlerContext ctx, final Object msg
 								) throws Exception {
 									if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
-										final var conn = ctx.channel();
+										final Channel conn = ctx.channel();
 										System.out.println("Dropping the connection " + conn);
 										conn.close();
 									}

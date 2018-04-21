@@ -5,6 +5,7 @@ import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
 import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
 import com.github.akurilov.netty.connection.pool.test.util.DummyClientChannelHandler;
 import com.github.akurilov.netty.connection.pool.test.util.EpollConnDroppingServer;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -55,9 +56,9 @@ public class EpollConnDropTest {
 
 		serverMock = new EpollConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
 
-		final var concurrencyThrottle = new Semaphore(CONCURRENCY);
+		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new EpollEventLoopGroup();
-		final var bootstrap = new Bootstrap()
+		final Bootstrap bootstrap = new Bootstrap()
 			.group(group)
 			.channel(EpollSocketChannel.class)
 			.handler(
@@ -89,13 +90,13 @@ public class EpollConnDropTest {
 	@Test
 	public void test()
 	throws Exception {
-		final var connCounter = new LongAdder();
-		final var executor = Executors.newFixedThreadPool(CONCURRENCY);
-		for(var i = 0; i < CONCURRENCY; i ++) {
+		final LongAdder connCounter = new LongAdder();
+		final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY);
+		for(int i = 0; i < CONCURRENCY; i ++) {
 			executor.submit(
 				() -> {
 					Channel conn;
-					for(var j = 0; j < CONN_ATTEMPTS; j ++) {
+					for(int j = 0; j < CONN_ATTEMPTS; j ++) {
 						try {
 							while(null == (conn = connPool.lease())) {
 								Thread.sleep(1);

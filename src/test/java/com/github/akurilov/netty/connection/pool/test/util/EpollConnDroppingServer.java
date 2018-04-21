@@ -30,7 +30,7 @@ implements Closeable {
 	throws InterruptedException {
 		dispatchGroup = new EpollEventLoopGroup();
 		workerGroup = new EpollEventLoopGroup();
-		final var bootstrap = new ServerBootstrap()
+		final ServerBootstrap bootstrap = new ServerBootstrap()
 			.group(dispatchGroup, workerGroup)
 			.channel(EpollServerSocketChannel.class)
 			.childHandler(
@@ -45,7 +45,7 @@ implements Closeable {
 										final ChannelHandlerContext ctx, final Object msg
 									) throws Exception {
 										if(0 == reqCounter.incrementAndGet() % dropEveryRequest) {
-											final var conn = ctx.channel();
+											final Channel conn = ctx.channel();
 											System.out.println("Dropping the connection " + conn);
 											conn.close();
 										}

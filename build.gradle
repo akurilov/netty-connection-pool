@@ -11,15 +11,16 @@ apply plugin: "maven"
 apply plugin: "signing"
 
 group = "com.github.akurilov"
-version = "1.0.0"
+version = "1.0.1"
 
 ext {
 	moduleName = "${group}.netty.connection.pool"
 	depVersion = [
-		javaCommons: "[2.0.0,)",
-		javaConcurrent: "[2.0.0,)",
+		javaCommons: "[2.0.2,)",
 		netty: "4.1.23.Final",
 	]
+
+
 }
 
 repositories {
@@ -30,7 +31,6 @@ dependencies {
 
 	compile(
 		"com.github.akurilov:java-commons:${depVersion.javaCommons}",
-		"com.github.akurilov:java-concurrent:${depVersion.javaConcurrent}",
 		"io.netty:netty-common:${depVersion.netty}",
 		"io.netty:netty-transport:${depVersion.netty}",
 	)
@@ -42,38 +42,20 @@ dependencies {
 }
 
 compileJava {
-	sourceCompatibility = JavaVersion.VERSION_1_10
-	targetCompatibility = JavaVersion.VERSION_1_10
-	inputs.property("moduleName", moduleName)
-	doFirst {
-		options.compilerArgs = [
-			"--module-path", classpath.asPath,
-		]
-		classpath = files()
-	}
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 compileTestJava {
-	sourceCompatibility = JavaVersion.VERSION_1_10
-	targetCompatibility = JavaVersion.VERSION_1_10
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
 	inputs.property("moduleName", moduleName)
-	doFirst {
-		options.compilerArgs = [
-			"--module-path", classpath.asPath,
-			"--add-modules", "ALL-MODULE-PATH",
-			"--add-reads", "${moduleName}.test=junit",
-			"--patch-module", "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
-		]
-		classpath = files()
-	}
 }
 
 jar {
-	inputs.property("moduleName", moduleName)
 	archiveName "$project.name.$extension"
 	manifest {
 		attributes(
-			"Automatic-Module-Name": moduleName,
 			"Implementation-Version": version,
 			"Implementation-Title": "$name"
 		)
@@ -81,18 +63,11 @@ jar {
 }
 
 test {
-	inputs.property("moduleName", moduleName)
 	doFirst {
 		jvmArgs += [
 			"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
 			"-XX:+HeapDumpOnOutOfMemoryError",
-			"--module-path", classpath.asPath,
-			'--add-exports', "$moduleName/${moduleName}.test=junit",
-			"--add-modules", "ALL-MODULE-PATH",
-			"--add-reads", "${moduleName}.test=junit",
-			"--patch-module", "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
 		]
-		classpath = files()
 	}
 	maxHeapSize "1g"
 	/*
