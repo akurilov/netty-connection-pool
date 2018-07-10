@@ -268,7 +268,7 @@ implements NonBlockingConnPool {
 			connQueue = availableConns.get(nodes[j % n]);
 			if(connQueue != null) {
 				conn = connQueue.poll();
-				if(conn != null && conn.isActive()) {
+				if(conn != null && conn.isOpen()) {
 					return conn;
 				}
 			}
