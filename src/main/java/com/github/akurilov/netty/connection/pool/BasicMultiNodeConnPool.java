@@ -140,13 +140,13 @@ public class BasicMultiNodeConnPool
         private CloseChannelListener(final String nodeAddr, final Channel conn) {
             this.nodeAddr = nodeAddr;
             this.conn = conn;
-            System.out.println("\ncloseChanelListener\n");
         }
 
         @Override
         public final void operationComplete(final ChannelFuture future)
                 throws Exception {
             LOG.fine("Connection to " + nodeAddr + " closed");
+            System.out.println("\nclose connection\n");
             closeLock.lock();
             try {
                 synchronized (connCounts) {
@@ -161,6 +161,7 @@ public class BasicMultiNodeConnPool
                     }
                 }
                 concurrencyThrottle.release();
+                System.out.println("\nconcurrencyThrottle.release()\n");
             } finally {
                 closeLock.unlock();
             }
