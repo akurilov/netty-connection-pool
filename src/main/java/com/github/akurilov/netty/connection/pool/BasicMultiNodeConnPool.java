@@ -288,7 +288,7 @@ public class BasicMultiNodeConnPool
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println(conn);
+                System.out.println("connectToAnyNode : " + conn);
             }
             if (conn == null) {
                 concurrencyThrottle.release();
