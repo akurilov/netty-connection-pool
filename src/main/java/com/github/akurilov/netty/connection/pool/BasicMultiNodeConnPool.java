@@ -284,9 +284,9 @@ public class BasicMultiNodeConnPool
             if (null == (conn = poll())) {
                 try {
                     conn = connectToAnyNode();
-                } catch (final ConnectException e){
+                } catch (final ConnectException e) {
                     concurrencyThrottle.release();
-                    throw new ConnectException();
+                    throw e;
                 }
             }
             if (conn == null) {

@@ -52,7 +52,7 @@ compileTestJava {
 }
 
 jar {
-	//archiveName "$project.name.$extension"
+	archiveName "$project.name.$extension"
 	manifest {
 		attributes(
 			"Implementation-Version": version,
