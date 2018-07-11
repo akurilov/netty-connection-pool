@@ -299,6 +299,8 @@ public class BasicMultiNodeConnPool
                 concurrencyThrottle.release();
                 throw new ConnectException();
             }
+        } {
+            System.out.println(":( concurrencyThrottle.tryAcquire()");
         }
         return conn;
     }
