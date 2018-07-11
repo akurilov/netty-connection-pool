@@ -290,6 +290,7 @@ public class BasicMultiNodeConnPool
         if (concurrencyThrottle.tryAcquire()) {
             if (null == (conn = poll())) {
                 conn = connectToAnyNode();
+                System.out.println("connectToAnyNode");
             }
             if (conn == null) {
                 concurrencyThrottle.release();
