@@ -264,15 +264,16 @@ public class BasicMultiNodeConnPool
         final int i = ThreadLocalRandom.current().nextInt(n);
         Queue<Channel> connQueue;
         Channel conn;
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         for (int j = i; j < i + n; j++) {
             connQueue = availableConns.get(nodes[j % n]);
+            System.out.println("connQueue = availableConns.get(nodes[j % n]) : " + connQueue);
             if (connQueue != null) {
                 conn = connQueue.poll();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 System.out.println("conn = connQueue.poll() : " + conn);
                 if (conn != null && conn.isActive()) {
                     return conn;
