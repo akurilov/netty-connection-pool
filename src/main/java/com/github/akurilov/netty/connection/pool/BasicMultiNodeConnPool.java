@@ -296,11 +296,11 @@ public class BasicMultiNodeConnPool
                 System.out.println("'conn = poll()' is not null : " + conn);
             }
             if (conn == null) {
+                System.out.println("    before concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 concurrencyThrottle.release();
+                System.out.println("    after concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 throw new ConnectException();
             }
-        } {
-            System.out.println(":( concurrencyThrottle.tryAcquire()");
         }
         return conn;
     }
