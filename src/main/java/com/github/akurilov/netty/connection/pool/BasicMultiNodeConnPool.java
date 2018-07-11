@@ -140,7 +140,7 @@ public class BasicMultiNodeConnPool
         private CloseChannelListener(final String nodeAddr, final Channel conn) {
             this.nodeAddr = nodeAddr;
             this.conn = conn;
-            System.out.println("closechanelListner");
+            System.out.println("\ncloseChanelListener\n");
         }
 
         @Override
@@ -265,17 +265,17 @@ public class BasicMultiNodeConnPool
         final int i = ThreadLocalRandom.current().nextInt(n);
         Queue<Channel> connQueue;
         Channel conn;
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         for (int j = i; j < i + n; j++) {
             connQueue = availableConns.get(nodes[j % n]);
-            System.out.println("connQueue = availableConns.get(nodes[j % n]) : " + connQueue);
+            //System.out.println("connQueue = availableConns.get(nodes[j % n]) : " + connQueue);
             if (connQueue != null) {
                 conn = connQueue.poll();
-                System.out.println("conn = connQueue.poll() : " + conn);
+                //System.out.println("conn = connQueue.poll() : " + conn);
                 if (conn != null && conn.isActive()) {
                     return conn;
                 }
@@ -289,18 +289,18 @@ public class BasicMultiNodeConnPool
             throws ConnectException {
         Channel conn = null;
         if (concurrencyThrottle.tryAcquire()) {
-            System.out.println("\n TRY " + concurrencyThrottle.availablePermits());
+            //System.out.println("\n TRY " + concurrencyThrottle.availablePermits());
             conn = poll();
             if (null == (conn)) {
                 conn = connectToAnyNode();
-                System.out.println("connectToAnyNode");
-            } else {
-                System.out.println("'conn = poll()' is not null : " + conn);
+//                System.out.println("connectToAnyNode");
+//            } else {
+//                System.out.println("'conn = poll()' is not null : " + conn);
             }
             if (conn == null) {
-                System.out.println("    before concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
+                //System.out.println("    before concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 concurrencyThrottle.release();
-                System.out.println("    after concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
+                //System.out.println("    after concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 throw new ConnectException();
             }
         }
