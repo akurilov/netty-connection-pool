@@ -140,6 +140,7 @@ public class BasicMultiNodeConnPool
         private CloseChannelListener(final String nodeAddr, final Channel conn) {
             this.nodeAddr = nodeAddr;
             this.conn = conn;
+            System.out.println("closechanelListner");
         }
 
         @Override
