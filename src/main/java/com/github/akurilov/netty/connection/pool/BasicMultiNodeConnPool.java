@@ -161,7 +161,7 @@ public class BasicMultiNodeConnPool
                     }
                 }
                 concurrencyThrottle.release();
-                System.out.println("\nconcurrencyThrottle.release()\n");
+                System.out.println("\nconcurrencyThrottle.release() : " + concurrencyThrottle.availablePermits());
             } finally {
                 closeLock.unlock();
             }
@@ -289,6 +289,12 @@ public class BasicMultiNodeConnPool
     public final Channel lease()
             throws ConnectException {
         Channel conn = null;
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("availablePermits : " + concurrencyThrottle.availablePermits());
         if (concurrencyThrottle.tryAcquire()) {
             //System.out.println("\n TRY " + concurrencyThrottle.availablePermits());
             conn = poll();
