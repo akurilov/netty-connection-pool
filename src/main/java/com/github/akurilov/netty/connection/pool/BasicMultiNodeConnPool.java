@@ -146,7 +146,6 @@ public class BasicMultiNodeConnPool
         public final void operationComplete(final ChannelFuture future)
                 throws Exception {
             LOG.fine("Connection to " + nodeAddr + " closed");
-            System.out.println("\nclose connection\n");
             closeLock.lock();
             try {
                 synchronized (connCounts) {
@@ -161,7 +160,6 @@ public class BasicMultiNodeConnPool
                     }
                 }
                 concurrencyThrottle.release();
-                System.out.println("\nconcurrencyThrottle.release() : " + concurrencyThrottle.availablePermits());
             } finally {
                 closeLock.unlock();
             }
@@ -268,10 +266,8 @@ public class BasicMultiNodeConnPool
         Channel conn;
         for (int j = i; j < i + n; j++) {
             connQueue = availableConns.get(nodes[j % n]);
-            //System.out.println("connQueue = availableConns.get(nodes[j % n]) : " + connQueue);
             if (connQueue != null) {
                 conn = connQueue.poll();
-                //System.out.println("conn = connQueue.poll() : " + conn);
                 if (conn != null && conn.isActive()) {
                     return conn;
                 }
@@ -284,35 +280,19 @@ public class BasicMultiNodeConnPool
     public final Channel lease()
             throws ConnectException {
         Channel conn = null;
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("availablePermits : " + concurrencyThrottle.availablePermits());
-        boolean flag = false;
-        if (concurrencyThrottle.availablePermits() == 2) flag = true;
         if (concurrencyThrottle.tryAcquire()) {
-            if (flag) System.out.println("1");
-            conn = poll();
-            if (flag) System.out.println("2 : " + conn);
-            if (null == (conn)) {
+            if (null == (conn = poll())) {
                 try {
                     conn = connectToAnyNode();
                 } catch (final ConnectException e){
-                    if (flag) System.out.println("3 : " + conn);
                     concurrencyThrottle.release();
                     throw new ConnectException();
                 }
             }
-            if (flag) System.out.println("3 : " + conn);
             if (conn == null) {
-                //System.out.println("    before concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 concurrencyThrottle.release();
-                //System.out.println("    after concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 throw new ConnectException();
             }
-            if (flag) System.out.println("4 : " + conn);
         }
         return conn;
     }
