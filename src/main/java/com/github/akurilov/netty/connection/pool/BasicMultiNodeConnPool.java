@@ -312,7 +312,12 @@ public class BasicMultiNodeConnPool
         Channel conn;
         for (int i = 0; i < availableCount; i++) {
             if (null == (conn = poll())) {
-                conn = connectToAnyNode();
+                try {
+                    conn = connectToAnyNode();
+                } catch (final ConnectException e) {
+                    concurrencyThrottle.release();
+                    throw e;
+                }
             }
             if (conn == null) {
                 concurrencyThrottle.release(availableCount - i);
