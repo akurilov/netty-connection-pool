@@ -279,11 +279,16 @@ public class BasicMultiNodeConnPool
     @Override
     public final Channel lease()
             throws ConnectException {
-        System.out.println("lease");
         Channel conn = null;
         if (concurrencyThrottle.tryAcquire()) {
             if (null == (conn = poll())) {
                 conn = connectToAnyNode();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(conn);
             }
             if (conn == null) {
                 concurrencyThrottle.release();
