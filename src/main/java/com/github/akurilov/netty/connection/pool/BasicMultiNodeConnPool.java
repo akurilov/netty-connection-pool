@@ -295,21 +295,26 @@ public class BasicMultiNodeConnPool
             e.printStackTrace();
         }
         System.out.println("availablePermits : " + concurrencyThrottle.availablePermits());
+        boolean flag = false;
+        if (concurrencyThrottle.availablePermits() == 2) flag = true;
         if (concurrencyThrottle.tryAcquire()) {
-            //System.out.println("\n TRY " + concurrencyThrottle.availablePermits());
+            if (flag) System.out.println("1");
             conn = poll();
+            if (flag) System.out.println("2 : " + conn);
             if (null == (conn)) {
                 conn = connectToAnyNode();
 //                System.out.println("connectToAnyNode");
 //            } else {
 //                System.out.println("'conn = poll()' is not null : " + conn);
             }
+            if (flag) System.out.println("3 : " + conn);
             if (conn == null) {
                 //System.out.println("    before concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 concurrencyThrottle.release();
                 //System.out.println("    after concurrencyThrottle.release() : "  + concurrencyThrottle.availablePermits());
                 throw new ConnectException();
             }
+            if (flag) System.out.println("4 : " + conn);
         }
         return conn;
     }
