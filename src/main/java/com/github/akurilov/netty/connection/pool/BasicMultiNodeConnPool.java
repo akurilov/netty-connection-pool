@@ -268,7 +268,13 @@ public class BasicMultiNodeConnPool
             connQueue = availableConns.get(nodes[j % n]);
             if (connQueue != null) {
                 conn = connQueue.poll();
-                if (conn != null && conn.isOpen()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("conn = connQueue.poll() : " + conn);
+                if (conn != null && conn.isActive()) {
                     return conn;
                 }
             }
@@ -283,12 +289,6 @@ public class BasicMultiNodeConnPool
         if (concurrencyThrottle.tryAcquire()) {
             if (null == (conn = poll())) {
                 conn = connectToAnyNode();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("connectToAnyNode : " + conn);
             }
             if (conn == null) {
                 concurrencyThrottle.release();
