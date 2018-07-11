@@ -302,6 +302,7 @@ public class BasicMultiNodeConnPool
                 throw new ConnectException();
             }
         }
+        System.out.println(conn + "\n");
         return conn;
     }
 
