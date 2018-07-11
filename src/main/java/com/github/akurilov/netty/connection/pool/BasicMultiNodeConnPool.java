@@ -266,11 +266,6 @@ public class BasicMultiNodeConnPool
         final int i = ThreadLocalRandom.current().nextInt(n);
         Queue<Channel> connQueue;
         Channel conn;
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
         for (int j = i; j < i + n; j++) {
             connQueue = availableConns.get(nodes[j % n]);
             //System.out.println("connQueue = availableConns.get(nodes[j % n]) : " + connQueue);
@@ -302,10 +297,13 @@ public class BasicMultiNodeConnPool
             conn = poll();
             if (flag) System.out.println("2 : " + conn);
             if (null == (conn)) {
-                conn = connectToAnyNode();
-//                System.out.println("connectToAnyNode");
-//            } else {
-//                System.out.println("'conn = poll()' is not null : " + conn);
+                try {
+                    conn = connectToAnyNode();
+                } catch (final ConnectException e){
+                    if (flag) System.out.println("3 : " + conn);
+                    concurrencyThrottle.release();
+                    throw new ConnectException();
+                }
             }
             if (flag) System.out.println("3 : " + conn);
             if (conn == null) {
