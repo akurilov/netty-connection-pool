@@ -288,9 +288,12 @@ public class BasicMultiNodeConnPool
             throws ConnectException {
         Channel conn = null;
         if (concurrencyThrottle.tryAcquire()) {
-            if (null == (conn = poll())) {
+            conn = poll();
+            if (null == (conn)) {
                 conn = connectToAnyNode();
                 System.out.println("connectToAnyNode");
+            } else {
+                System.out.println("'conn = poll()' is not null : " + conn);
             }
             if (conn == null) {
                 concurrencyThrottle.release();
