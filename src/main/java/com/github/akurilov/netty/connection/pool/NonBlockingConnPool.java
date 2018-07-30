@@ -20,7 +20,7 @@ extends Closeable {
 	 @throws ConnectException if failed to connect
 	 @throws IllegalArgumentException if count is less than 1
 	 */
-	void preCreateConnections(final int count)
+	void preConnect(final int count)
 	throws ConnectException, IllegalArgumentException;
 
 	/**

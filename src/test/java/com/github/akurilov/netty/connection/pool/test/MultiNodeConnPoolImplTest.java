@@ -3,7 +3,7 @@ package com.github.akurilov.netty.connection.pool.test;
 import static com.github.akurilov.netty.connection.pool.NonBlockingConnPool.ATTR_KEY_NODE;
 
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
-import com.github.akurilov.netty.connection.pool.test.util.BasicMultiNodeConnPoolMock;
+import com.github.akurilov.netty.connection.pool.test.util.MultiNodeConnPoolImplMock;
 import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  Created by andrey on 12.05.17.
  */
 @RunWith(Parameterized.class)
-public class BasicMultiNodeConnPoolTest {
+public class MultiNodeConnPoolImplTest {
 
 	private static final int TEST_STEP_TIME_SECONDS = 50;
 	private static final int BATCH_SIZE = 0x1000;
@@ -51,7 +51,7 @@ public class BasicMultiNodeConnPoolTest {
 		);
 	}
 
-	public BasicMultiNodeConnPoolTest(final int concurrencyLevel, final int nodeCount) {
+	public MultiNodeConnPoolImplTest(final int concurrencyLevel, final int nodeCount) {
 		this.concurrencyLevel = concurrencyLevel;
 		this.nodeCount = nodeCount;
 		final String[] nodes = new String[nodeCount];
@@ -59,7 +59,7 @@ public class BasicMultiNodeConnPoolTest {
 			nodes[i] = Integer.toString(i);
 		}
 		try(
-			final NonBlockingConnPool connPool = new BasicMultiNodeConnPoolMock(
+			final NonBlockingConnPool connPool = new MultiNodeConnPoolImplMock(
 				new Semaphore(concurrencyLevel), nodes, new Bootstrap(),
 				new DummyChannelPoolHandler(), 12345, 0
 			)

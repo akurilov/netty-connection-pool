@@ -1,6 +1,6 @@
 package com.github.akurilov.netty.connection.pool.test;
 
-import com.github.akurilov.netty.connection.pool.BasicMultiNodeConnPool;
+import com.github.akurilov.netty.connection.pool.MultiNodeConnPoolImpl;
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
 import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
 import com.github.akurilov.netty.connection.pool.test.util.DummyClientChannelHandler;
@@ -73,10 +73,10 @@ public class EpollConnDropTest {
 			.option(ChannelOption.SO_KEEPALIVE, true)
 			.option(ChannelOption.SO_REUSEADDR, true)
 			.option(ChannelOption.TCP_NODELAY, true);
-		connPool = new BasicMultiNodeConnPool(
-			concurrencyThrottle, NODES, bootstrap, CPH, DEFAULT_PORT, 0
+		connPool = new MultiNodeConnPoolImpl(
+			concurrencyThrottle, NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS
 		);
-		connPool.preCreateConnections(CONCURRENCY);
+		connPool.preConnect(CONCURRENCY);
 	}
 
 	@After

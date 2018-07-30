@@ -21,6 +21,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -31,15 +32,17 @@ import java.util.logging.Logger;
  The provided semaphore limits the count of the simultaneously used connections.
  Based on netty.
  */
-public class BasicMultiNodeConnPool
+public class MultiNodeConnPoolImpl
 implements NonBlockingConnPool {
 
-	private final static Logger LOG = Logger.getLogger(BasicMultiNodeConnPool.class.getName());
+	private final static Logger LOG = Logger.getLogger(MultiNodeConnPoolImpl.class.getName());
 
 	private final Semaphore concurrencyThrottle;
 	private final String nodes[];
 	private final int n;
 	private final int connAttemptsLimit;
+	private final long connectTimeOut;
+	private final TimeUnit connectTimeUnit;
 	private final Map<String, Bootstrap> bootstraps;
 	private final Map<String, List<Channel>> allConns;
 	private final Map<String, Queue<Channel>> availableConns;
@@ -55,9 +58,10 @@ implements NonBlockingConnPool {
 	 * @param defaultPort default port used to connect (any node address from the nodes set may override this)
 	 * @param connAttemptsLimit the max count of the subsequent connection failures to the node before the node will be excluded from the pool, 0 means no limit
 	 */
-	public BasicMultiNodeConnPool(
+	public MultiNodeConnPoolImpl(
 		final Semaphore concurrencyThrottle,  final String nodes[], final Bootstrap bootstrap,
-		final ChannelPoolHandler connPoolHandler, final int defaultPort, final int connAttemptsLimit
+		final ChannelPoolHandler connPoolHandler, final int defaultPort, final int connAttemptsLimit,
+		final long connectTimeOut, final TimeUnit connectTimeUnit
 	) {
 		this.concurrencyThrottle = concurrencyThrottle;
 		if(nodes.length == 0) {
@@ -65,6 +69,8 @@ implements NonBlockingConnPool {
 		}
 		this.nodes = nodes;
 		this.connAttemptsLimit = connAttemptsLimit;
+		this.connectTimeOut = connectTimeOut;
+		this.connectTimeUnit = connectTimeUnit;
 		this.n = nodes.length;
 		bootstraps = new HashMap<>(n);
 		allConns = new HashMap<>(n);
@@ -105,15 +111,13 @@ implements NonBlockingConnPool {
 	}
 
 	@Override
-	public void preCreateConnections(final int count)
+	public void preConnect(final int count)
 	throws ConnectException, IllegalArgumentException {
 		if(count > 0) {
 			for(int i = 0; i < count; i ++) {
 				final Channel conn = connectToAnyNode();
 				if(conn == null) {
-					throw new ConnectException(
-						"Failed to pre-create the connections to the target nodes"
-					);
+					throw new ConnectException("Failed to pre-create the connections to the target nodes");
 				}
 				final String nodeAddr = conn.attr(ATTR_KEY_NODE).get();
 				if(conn.isActive()) {
@@ -195,20 +199,14 @@ implements NonBlockingConnPool {
 			try {
 				conn = connect(nodeAddr);
 			} catch(final Exception e) {
-				LOG.warning(
-					"Failed to create a new connection to " + nodeAddr + ": " + e.toString()
-				);
+				LOG.warning("Failed to create a new connection to " + nodeAddr + ": " + e.toString());
 				if(connAttemptsLimit > 0) {
-					final int selectedNodeFailedConnAttemptsCount = failedConnAttemptCounts
-						.getInt(nodeAddr) + 1;
-					failedConnAttemptCounts.put(
-						nodeAddr, selectedNodeFailedConnAttemptsCount
-					);
+					final int selectedNodeFailedConnAttemptsCount = failedConnAttemptCounts.getInt(nodeAddr) + 1;
+					failedConnAttemptCounts.put(nodeAddr, selectedNodeFailedConnAttemptsCount);
 					if(selectedNodeFailedConnAttemptsCount > connAttemptsLimit) {
 						LOG.warning(
-							"Failed to connect to the node \"" + nodeAddr + "\" "
-								+ selectedNodeFailedConnAttemptsCount + " times successively, "
-								+ "excluding the node from the connection pool forever"
+							"Failed to connect to the node \"" + nodeAddr + "\" " + selectedNodeFailedConnAttemptsCount
+								+ " times successively, excluding the node from the connection pool forever"
 						);
 						// the node having virtually Integer.MAX_VALUE established connections
 						// will never be selected by the algorithm
@@ -253,27 +251,35 @@ implements NonBlockingConnPool {
 
 	protected Channel connect(final String addr)
 	throws Exception {
+		Channel conn = null;
 		final Bootstrap bootstrap = bootstraps.get(addr);
 		if(bootstrap != null) {
-			return bootstrap.connect().sync().channel();
+			final ChannelFuture connFuture = bootstrap.connect();
+			if(connectTimeOut > 0) {
+				if(connFuture.await(connectTimeOut, connectTimeUnit)) {
+					conn = connFuture.channel();
+				}
+			} else {
+				conn = connFuture.sync().channel();
+			}
 		}
-		return null;
+		return conn;
 	}
 
 	protected Channel poll() {
 		final int i = ThreadLocalRandom.current().nextInt(n);
 		Queue<Channel> connQueue;
-		Channel conn;
+		Channel conn = null;
 		for(int j = i; j < i + n; j ++) {
 			connQueue = availableConns.get(nodes[j % n]);
 			if(connQueue != null) {
 				conn = connQueue.poll();
 				if(conn != null && conn.isActive()) {
-					return conn;
+					break;
 				}
 			}
 		}
-		return null;
+		return conn;
 	}
 
 	@Override
