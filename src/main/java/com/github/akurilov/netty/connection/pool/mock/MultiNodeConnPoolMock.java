@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.test.util;
+package com.github.akurilov.netty.connection.pool.mock;
 
 import com.github.akurilov.netty.connection.pool.MultiNodeConnPoolImpl;
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
@@ -14,18 +14,17 @@ import java.util.concurrent.TimeUnit;
 /**
  Created by andrey on 12.05.17.
  */
-public final class MultiNodeConnPoolImplMock
+public final class MultiNodeConnPoolMock
 extends MultiNodeConnPoolImpl
 implements NonBlockingConnPool {
 
-	public MultiNodeConnPoolImplMock(
+	public MultiNodeConnPoolMock(
 		final Semaphore concurrencyThrottle, final String[] nodes, final Bootstrap bootstrap,
-		final ChannelPoolHandler connPoolHandler, final int defaultPort,
-		final int connFailSeqLenLimit
+		final ChannelPoolHandler connPoolHandler, final int defaultPort, final int connFailSeqLenLimit
 	) {
 		super(
-			concurrencyThrottle, nodes, bootstrap, connPoolHandler, defaultPort,
-			connFailSeqLenLimit, 0, TimeUnit.SECONDS
+			concurrencyThrottle, nodes, bootstrap, connPoolHandler, defaultPort, connFailSeqLenLimit, 0,
+			TimeUnit.SECONDS
 		);
 	}
 

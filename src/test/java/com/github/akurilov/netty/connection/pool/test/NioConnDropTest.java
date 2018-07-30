@@ -2,8 +2,8 @@ package com.github.akurilov.netty.connection.pool.test;
 
 import com.github.akurilov.netty.connection.pool.MultiNodeConnPoolImpl;
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
-import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
-import com.github.akurilov.netty.connection.pool.test.util.DummyClientChannelHandler;
+import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.mock.DummyClientChannelHandler;
 import com.github.akurilov.netty.connection.pool.test.util.NioConnDroppingServer;
 
 import io.netty.bootstrap.Bootstrap;

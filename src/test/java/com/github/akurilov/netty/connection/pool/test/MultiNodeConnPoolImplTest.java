@@ -3,8 +3,8 @@ package com.github.akurilov.netty.connection.pool.test;
 import static com.github.akurilov.netty.connection.pool.NonBlockingConnPool.ATTR_KEY_NODE;
 
 import com.github.akurilov.netty.connection.pool.NonBlockingConnPool;
-import com.github.akurilov.netty.connection.pool.test.util.MultiNodeConnPoolImplMock;
-import com.github.akurilov.netty.connection.pool.test.util.DummyChannelPoolHandler;
+import com.github.akurilov.netty.connection.pool.mock.MultiNodeConnPoolMock;
+import com.github.akurilov.netty.connection.pool.mock.DummyChannelPoolHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 
@@ -59,7 +59,7 @@ public class MultiNodeConnPoolImplTest {
 			nodes[i] = Integer.toString(i);
 		}
 		try(
-			final NonBlockingConnPool connPool = new MultiNodeConnPoolImplMock(
+			final NonBlockingConnPool connPool = new MultiNodeConnPoolMock(
 				new Semaphore(concurrencyLevel), nodes, new Bootstrap(),
 				new DummyChannelPoolHandler(), 12345, 0
 			)
