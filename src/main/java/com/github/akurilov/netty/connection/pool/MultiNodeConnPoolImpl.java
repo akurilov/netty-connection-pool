@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
@@ -73,8 +74,8 @@ implements NonBlockingConnPool {
 		this.connectTimeUnit = connectTimeUnit;
 		this.n = nodes.length;
 		bootstraps = new HashMap<>(n);
-		allConns = new HashMap<>(n);
-		availableConns = new HashMap<>(n);
+		allConns = new ConcurrentHashMap<>(n);
+		availableConns = new ConcurrentHashMap<>(n);
 		connCounts = new Object2IntOpenHashMap<>(n);
 		failedConnAttemptCounts = new Object2IntOpenHashMap<>(n);
 
