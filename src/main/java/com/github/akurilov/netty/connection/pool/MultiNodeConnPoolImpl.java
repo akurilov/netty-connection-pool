@@ -13,7 +13,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,7 @@ implements NonBlockingConnPool {
 	private final long connectTimeOut;
 	private final TimeUnit connectTimeUnit;
 	private final Map<String, Bootstrap> bootstraps;
-	private final Map<String, List<Channel>> allConns;
+	private final Map<String, Queue<Channel>> allConns;
 	private final Map<String, Queue<Channel>> availableConns;
 	private final Object2IntMap<String> connCounts;
 	private final Object2IntMap<String> failedConnAttemptCounts;
@@ -159,7 +158,7 @@ implements NonBlockingConnPool {
 					}
 				}
 				synchronized(allConns) {
-					final List<Channel> nodeConns = allConns.get(nodeAddr);
+					final Queue<Channel> nodeConns = allConns.get(nodeAddr);
 					if(nodeConns != null) {
 						nodeConns.remove(conn);
 					}
@@ -236,7 +235,7 @@ implements NonBlockingConnPool {
 		if(conn != null) {
 			conn.closeFuture().addListener(new CloseChannelListener(nodeAddr, conn));
 			conn.attr(ATTR_KEY_NODE).set(nodeAddr);
-			allConns.computeIfAbsent(nodeAddr, na -> new ArrayList<>()).add(conn);
+			allConns.computeIfAbsent(nodeAddr, na -> new ConcurrentLinkedQueue<>()).add(conn);
 			synchronized(connCounts) {
 				connCounts.put(nodeAddr, connCounts.getInt(nodeAddr) + 1);
 			}
@@ -360,27 +359,26 @@ implements NonBlockingConnPool {
 	public void close()
 	throws IOException {
 		closeLock.lock();
-		int closedConnCount = 0;
-		for(final String nodeAddr: availableConns.keySet()) {
-			for(final Channel conn: availableConns.get(nodeAddr)) {
-				if(conn.isOpen()) {
-					conn.close();
-					closedConnCount ++;
-				}
-			}
-		}
+		availableConns
+			.values()
+			.forEach(
+				conns -> conns
+					.stream()
+					.filter(Channel::isOpen)
+					.forEach(Channel::close)
+			);
 		availableConns.clear();
-		for(final String nodeAddr: allConns.keySet()) {
-			for(final Channel conn: allConns.get(nodeAddr)) {
-				if(conn.isOpen()) {
-					conn.close();
-					closedConnCount ++;
-				}
-			}
-		}
+		allConns
+			.values()
+			.forEach(
+				conns -> conns
+					.stream()
+					.filter(Channel::isOpen)
+					.forEach(Channel::close)
+			);
 		allConns.clear();
 		bootstraps.clear();
 		connCounts.clear();
-		LOG.fine("Closed " + closedConnCount + " connections");
+		LOG.fine("Closed all connections");
 	}
 }
