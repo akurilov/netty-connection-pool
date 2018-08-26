@@ -1,4 +1,4 @@
-package com.github.akurilov.netty.connection.pool.test.util;
+package com.github.akurilov.netty.connection.pool.mock;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

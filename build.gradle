@@ -11,12 +11,12 @@ apply plugin: "maven"
 apply plugin: "signing"
 
 group = "com.github.akurilov"
-version = "1.0.3"
+version = "1.0.9"
 
 ext {
 	moduleName = "${group}.netty.connection.pool"
 	depVersion = [
-		javaCommons: "[2.1.2,)",
+		javaCommons: "2.1.6",
 		netty: "4.1.25.Final",
 	]
 
