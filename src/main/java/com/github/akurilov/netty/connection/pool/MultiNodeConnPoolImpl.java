@@ -359,26 +359,30 @@ implements NonBlockingConnPool {
 	public void close()
 	throws IOException {
 		closeLock.lock();
-		availableConns
-			.values()
-			.forEach(
-				conns -> conns
-					.stream()
-					.filter(Channel::isOpen)
-					.forEach(Channel::close)
-			);
-		availableConns.clear();
-		allConns
-			.values()
-			.forEach(
-				conns -> conns
-					.stream()
-					.filter(Channel::isOpen)
-					.forEach(Channel::close)
-			);
-		allConns.clear();
-		bootstraps.clear();
-		connCounts.clear();
+		try {
+			availableConns
+				.values()
+				.forEach(
+					conns -> conns
+						.stream()
+						.filter(Channel::isOpen)
+						.forEach(Channel::close)
+				);
+			availableConns.clear();
+			allConns
+				.values()
+				.forEach(
+					conns -> conns
+						.stream()
+						.filter(Channel::isOpen)
+						.forEach(Channel::close)
+				);
+			allConns.clear();
+			bootstraps.clear();
+			connCounts.clear();
+		} finally {
+			closeLock.unlock();
+		}
 		LOG.fine("Closed all connections");
 	}
 }

@@ -15,7 +15,7 @@ operation (leasing/releasing many connections at once).
 ## Gradle
 
 ```groovy
-compile group: 'com.github.akurilov', name: 'netty-connection-pool', version: '1.0.7'
+compile group: 'com.github.akurilov', name: 'netty-connection-pool', version: '1.0.8'
 ```
 
 ## Code Example
