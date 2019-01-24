@@ -3,24 +3,32 @@ description = "High-performance non-blocking, multi-endpoint connection pool"
 buildscript {
 	repositories {
 		mavenCentral()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "org.javamodularity:moduleplugin:1.4.0"
 	}
 }
 
 apply plugin: "java"
 apply plugin: "maven"
 apply plugin: "signing"
+apply plugin: "org.javamodularity.moduleplugin"
 
 group = "com.github.akurilov"
-version = "1.0.9"
+version = "1.1.0"
+
+sourceCompatibility = 11
+targetCompatibility = 11
 
 ext {
 	moduleName = "${group}.netty.connection.pool"
 	depVersion = [
-		javaCommons: "2.1.6",
+		javaCommons: "2.2.2",
 		netty: "4.1.25.Final",
 	]
-
-
 }
 
 repositories {
@@ -41,20 +49,10 @@ dependencies {
 	)
 }
 
-compileJava {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-compileTestJava {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 jar {
-	archiveName "$project.name.$extension"
 	manifest {
 		attributes(
+			"Automatic-Module-Name": moduleName,
 			"Implementation-Version": version,
 			"Implementation-Title": "$name"
 		)
@@ -173,6 +171,6 @@ uploadArchives {
 	}
 }
 
-task wrapper(type: Wrapper) {
-	gradleVersion = "4.6"
+wrapper {
+	gradleVersion = "5.0"
 }
