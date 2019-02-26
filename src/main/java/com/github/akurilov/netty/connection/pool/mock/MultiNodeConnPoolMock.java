@@ -19,13 +19,10 @@ extends MultiNodeConnPoolImpl
 implements NonBlockingConnPool {
 
 	public MultiNodeConnPoolMock(
-		final Semaphore concurrencyThrottle, final String[] nodes, final Bootstrap bootstrap,
-		final ChannelPoolHandler connPoolHandler, final int defaultPort, final int connFailSeqLenLimit
+		final String[] nodes, final Bootstrap bootstrap, final ChannelPoolHandler connPoolHandler,
+		final int defaultPort, final int connFailSeqLenLimit
 	) {
-		super(
-			concurrencyThrottle, nodes, bootstrap, connPoolHandler, defaultPort, connFailSeqLenLimit, 0,
-			TimeUnit.SECONDS
-		);
+		super(nodes, bootstrap, connPoolHandler, defaultPort, connFailSeqLenLimit, 0, TimeUnit.SECONDS);
 	}
 
 	protected final Channel connect(final String addr) {

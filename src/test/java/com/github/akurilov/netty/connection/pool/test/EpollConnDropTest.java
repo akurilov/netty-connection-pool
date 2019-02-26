@@ -26,9 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.Closeable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -56,9 +54,8 @@ public class EpollConnDropTest {
 
 		serverMock = new EpollConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
 
-		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new EpollEventLoopGroup();
-		final Bootstrap bootstrap = new Bootstrap()
+		final var bootstrap = new Bootstrap()
 			.group(group)
 			.channel(EpollSocketChannel.class)
 			.handler(
@@ -73,9 +70,7 @@ public class EpollConnDropTest {
 			.option(ChannelOption.SO_KEEPALIVE, true)
 			.option(ChannelOption.SO_REUSEADDR, true)
 			.option(ChannelOption.TCP_NODELAY, true);
-		connPool = new MultiNodeConnPoolImpl(
-			concurrencyThrottle, NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS
-		);
+		connPool = new MultiNodeConnPoolImpl(NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS);
 		connPool.preConnect(CONCURRENCY);
 	}
 
@@ -90,8 +85,8 @@ public class EpollConnDropTest {
 	@Test
 	public void test()
 	throws Exception {
-		final LongAdder connCounter = new LongAdder();
-		final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY);
+		final var connCounter = new LongAdder();
+		final var executor = Executors.newFixedThreadPool(CONCURRENCY);
 		for(int i = 0; i < CONCURRENCY; i ++) {
 			executor.submit(
 				() -> {

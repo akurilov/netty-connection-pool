@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.io.Closeable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -53,7 +52,6 @@ public class EpollConnLeakTest {
 		serverMock = new EpollConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
 
 		// create
-		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new EpollEventLoopGroup();
 		final Bootstrap bootstrap = new Bootstrap()
 			.group(group)
@@ -70,9 +68,7 @@ public class EpollConnLeakTest {
 			.option(ChannelOption.SO_KEEPALIVE, true)
 			.option(ChannelOption.SO_REUSEADDR, true)
 			.option(ChannelOption.TCP_NODELAY, true);
-		connPool = new MultiNodeConnPoolImpl(
-			concurrencyThrottle, NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS
-		);
+		connPool = new MultiNodeConnPoolImpl(NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS);
 		connPool.preConnect(CONCURRENCY);
 
 		// use

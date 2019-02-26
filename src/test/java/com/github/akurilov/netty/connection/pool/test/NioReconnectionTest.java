@@ -51,7 +51,6 @@ public class NioReconnectionTest {
 	public void setUp()
 	throws Exception {
 		serverMock = new NioConnDroppingServer(DEFAULT_PORT, FAIL_EVERY_CONN_ATTEMPT);
-		final Semaphore concurrencyThrottle = new Semaphore(CONCURRENCY);
 		group = new NioEventLoopGroup();
 		final Bootstrap bootstrap = new Bootstrap().group(group).channel(NioSocketChannel.class).handler(
 			new ChannelInitializer<SocketChannel>() {
@@ -62,9 +61,7 @@ public class NioReconnectionTest {
 				}
 			}).option(ChannelOption.SO_KEEPALIVE, true).option(ChannelOption.SO_REUSEADDR, true).option(
 			ChannelOption.TCP_NODELAY, true);
-		connPool = new MultiNodeConnPoolImpl(
-			concurrencyThrottle, NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS
-		);
+		connPool = new MultiNodeConnPoolImpl(NODES, bootstrap, CPH, DEFAULT_PORT, 0, 0, TimeUnit.SECONDS);
 		connPool.preConnect(CONCURRENCY);
 	}
 

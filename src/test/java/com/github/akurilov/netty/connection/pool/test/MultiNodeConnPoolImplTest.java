@@ -52,7 +52,6 @@ public class MultiNodeConnPoolImplTest {
 	}
 
 	public MultiNodeConnPoolImplTest(final int concurrencyLevel, final int nodeCount) {
-		this.concurrencyLevel = concurrencyLevel;
 		this.nodeCount = nodeCount;
 		final String[] nodes = new String[nodeCount];
 		for(int i = 0; i < nodeCount; i ++) {
@@ -60,7 +59,7 @@ public class MultiNodeConnPoolImplTest {
 		}
 		try(
 			final NonBlockingConnPool connPool = new MultiNodeConnPoolMock(
-				new Semaphore(concurrencyLevel), nodes, new Bootstrap(),
+				nodes, new Bootstrap(),
 				new DummyChannelPoolHandler(), 12345, 0
 			)
 		) {
