@@ -21,7 +21,7 @@ extends Closeable {
 	 @throws IllegalArgumentException if count is less than 1
 	 */
 	void preConnect(final int count)
-	throws ConnectException, IllegalArgumentException;
+	throws ConnectException, IllegalArgumentException, InterruptedException;
 
 	/**
 	 Get the connection immediately (don't block) or null. The caller should decide whether to fail,

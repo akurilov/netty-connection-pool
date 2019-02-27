@@ -6,22 +6,28 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.pool.ChannelPoolHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 /**
  * Created by andrey on 23.01.17.
@@ -86,7 +92,7 @@ implements NonBlockingConnPool {
 					.clone()
 					.remoteAddress(nodeAddr)
 					.handler(
-						new ChannelInitializer<Channel>() {
+						new ChannelInitializer<>() {
 							@Override
 							protected final void initChannel(final Channel conn)
 							throws Exception {
@@ -106,24 +112,48 @@ implements NonBlockingConnPool {
 
 	@Override
 	public void preConnect(final int count)
-	throws ConnectException, IllegalArgumentException {
+	throws ConnectException, IllegalArgumentException, InterruptedException {
 		if(count > 0) {
+			final CountDownLatch latch = new CountDownLatch(count);
 			for(int i = 0; i < count; i ++) {
-				final Channel conn = connectToAnyNode();
-				if(conn == null) {
-					throw new ConnectException("Failed to pre-create the connections to the target nodes");
-				}
-				final String nodeAddr = conn.attr(ATTR_KEY_NODE).get();
-				if(conn.isActive()) {
-					final Queue<Channel> connQueue = availableConns.get(nodeAddr);
-					if(connQueue != null) {
-						connQueue.add(conn);
-					}
-				} else {
-					conn.close();
-				}
+				final var node = nodes[i % nodes.length];
+				bootstraps
+					.get(node)
+					.connect()
+					.addListener(
+						(ChannelFutureListener) future -> {
+							try {
+								final var conn = future.channel();
+								conn.closeFuture().addListener(new CloseChannelListener(node, conn));
+								conn.attr(ATTR_KEY_NODE).set(node);
+								allConns.computeIfAbsent(node, na -> new ConcurrentLinkedQueue<>()).add(conn);
+								synchronized(connCounts) {
+									connCounts.get(node).incrementAndGet();
+								}
+								if(connAttemptsLimit > 0) {
+									// reset the connection failures counter if connected successfully
+									failedConnAttemptCounts.get(node).set(0);
+								}
+								LOG.fine("New connection to " + node + " created");
+								if(conn.isActive()) {
+									final Queue<Channel> connQueue = availableConns.get(node);
+									if(connQueue != null) {
+										connQueue.add(conn);
+									}
+								} else {
+									conn.close();
+								}
+							} finally {
+								latch.countDown();
+							}
+						}
+					);
 			}
-			LOG.info("Pre-created " + count + " connections");
+			if(latch.await(connectTimeOut, connectTimeUnit)) {
+				LOG.info("Pre-created " + count + " connections");
+			} else {
+				LOG.warning("Pre-created " + (count - latch.getCount()) + " connections");
+			}
 		} else {
 			throw new IllegalArgumentException("Connection count should be > 0, but got " + count);
 		}
